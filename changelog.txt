@@ -1,4 +1,34 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.0
+Date: 2026-10-18
+  Features:
+    - Package loaders and unloaders: inserters fill a loader from machines or belts and empty an unloader. A loader
+      with an address sends to the nearest unloader whose name matches (* matches anything); with none it supplies
+      the chests that ask, like a passive provider. Posts, loaders and unloaders can be named (kept in blueprints,
+      copy-paste and upgrades).
+    - Chain pulleys: a cheap node that bends a line; the chain wraps round it and packages pass without stopping.
+    - Quality: a better post sends bigger packages (+30% a level), reaches farther (spans +2 tiles, chests +0.5 a
+      level) and runs a faster chain (+15% a level; a span takes its lower-quality end's).
+    - Ride the chains: the vehicle key (F) by a post hooks you on; steer at each post with the walking keys, or pick
+      a named post or unloader to ride to; F again (or a vehicle, or dying) drops you off.
+    - Chain posts for faster modded belts: every belt faster than express (Space Age's turbo, Krastorio 2's, ...)
+      gets a tier moving as much as it does, made from the tier before plus that belt and unlocked with it (up to 6
+      tiers; tiers 4-6 show their collars in the other neon colour).
+---------------------------------------------------------------------------------------------------
+Version: 0.2.0
+Date: 2026-10-18
+  Features:
+    - Fast and express chain posts (tiers 2 and 3): about 30 and 45 items/s a post, like red and blue belts
+      (15-item packages every 30 ticks at 0.074 tiles/tick, 30-item packages every 40 ticks at 0.1). Researched
+      with Logistics 2 and 3, made from the tier before, like belts.
+    - A post shows its tier as holo rings under its head (one, two, three); a span's links crawl at its speed.
+    - A span between posts of different tiers runs at the slower one's speed.
+  Changes:
+    - Tier speeds are whole 1/256ths of a tile a tick (the engine floors a projectile's speed to that): packages
+      ride exactly as fast as the chain sprites crawl. Tier 1 rides 0.051 tiles/tick (was 0.047 in effect).
+    - Upgrades in place (fast-replace, upgrade planner): the new post keeps the old one's spans, chests and the
+      packages riding to it.
+---------------------------------------------------------------------------------------------------
 Version: 0.1.0
 Date: 2026-10-18
   Features:

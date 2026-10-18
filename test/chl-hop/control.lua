@@ -40,9 +40,9 @@ script.on_nth_tick(10, function(ev)
     local got = t.chest.get_item_count("iron-plate")
     check(got == 50, "the chest got 50 iron plates (" .. got .. ")")
     local last = remote.call(CL, "last_delivered")
-    -- strands run 10 and 8 tiles at 0.05 a tick: 360 ticks
+    -- strands run 10 and 8 tiles at 13/256 a tick: 354 ticks
     local took = last and last.arrived - last.sent or -1
-    check(last and last.hops == 2 and math.abs(took - 360) <= 3, "two hops in about 360 ticks (" .. took .. ")")
+    check(last and last.hops == 2 and math.abs(took - 354) <= 3, "two hops in about 354 ticks (" .. took .. ")")
     local spilled = count(s, { { -2, 17 }, { 16, 24 } }, "copper-plate")
     check(spilled == 30, "the package whose post went fell with all 30 copper plates (" .. spilled .. ")")
     check(remote.call(CL, "packages") == 0, "no package left in flight")

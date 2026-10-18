@@ -2,10 +2,15 @@
 -- what they ask for from provider / storage chests on the same chain network, in vanilla's order (active
 -- provider, storage, buffer, passive provider); active providers and requesters' trash empty into storage.
 -- A round-robin cursor looks at a few chests a tick (setting), so the work is spread however big the base is.
+-- Loaders (a plain container) are served too: with an address they send what they hold to the nearest unloader
+-- whose name matches, else they supply the chests that ask, at a passive provider's rank. Unloaders are requesters.
 local S = require("shared")
+local N = require("names")
 
 local L = {} -- control.lua sets L.send(from_post, to_post, items, dest) and L.POST
 local CHEST = "logistic-container"
+local LOADER = "chl-loader"
+L.LOADER = LOADER
 local RANK = { ["active-provider"] = 1, storage = 2, buffer = 3, ["passive-provider"] = 4 }
 local COLORS = { magenta = { 1, 0.1, 0.6 }, toxic = { 0.3, 1, 0.15 }, orange = { 1, 0.35, 0 }, red = { 1, 0.1, 0.1 } }
 
@@ -25,6 +30,9 @@ local function unkey(k)
   local n, q = k:match("^(.*)|(.*)$")
   return n, q
 end
+
+-- a supplying chest's rank (a loader with no address: a passive provider's)
+local function rank(c) return c.loader and RANK["passive-provider"] or RANK[c.mode] or 9 end
 
 local function tier(post) return S.TIERS[post.tier or 1] end
 
@@ -56,11 +64,20 @@ local function reach_area(e, extra)
   return { { b.left_top.x - extra, b.left_top.y - extra }, { b.right_bottom.x + extra, b.right_bottom.y + extra } }
 end
 
+-- whether a chest stands within a post's reach: the chest's box widened by it meets the post's
+local function covers(post, chest)
+  local a, b = reach_area(chest, S.reach(post.quality or 0)), post.e.bounding_box
+  return b.left_top.x < a[2][1] and b.right_bottom.x > a[1][1] and b.left_top.y < a[2][2] and b.right_bottom.y > a[1][2]
+end
+
+-- (searches with the longest reach any post has, then keeps the posts whose own reach covers the chest; pulleys
+-- serve no chests)
 local function nearest_post(chest, skip)
   local best, bd
-  for _, p in pairs(chest.surface.find_entities_filtered({ name = L.POST, area = reach_area(chest, S.REACH), force = chest.force })) do
+  for _, p in pairs(chest.surface.find_entities_filtered({ name = L.POST, area = reach_area(chest, S.reach(5)), force = chest.force })) do
     local u = p.unit_number
-    if u ~= skip and storage.posts[u] then
+    local post = storage.posts[u]
+    if u ~= skip and post and not post.pulley and covers(post, chest) then
       local d = (p.position.x - chest.position.x) ^ 2 + (p.position.y - chest.position.y) ^ 2
       if not bd or d < bd then best, bd = u, d end
     end
@@ -92,7 +109,7 @@ local function attach(chest, post_u)
   local u = chest.unit_number
   local c = storage.chests[u]
   if not c then
-    c = { e = chest, mode = chest.prototype.logistic_mode, items = {} }
+    c = { e = chest, mode = chest.prototype.logistic_mode, items = {}, loader = chest.name == LOADER or nil }
     storage.chests[u] = c
     local list = storage.chest_list
     list[#list + 1] = u
@@ -127,10 +144,13 @@ end
 
 -- a new post takes the chests in its reach that have none, and those it stands nearer to
 function L.post_built(post)
-  for _, chest in pairs(post.surface.find_entities_filtered({ type = CHEST, area = reach_area(post, S.REACH + 2), force = post.force })) do
-    local best = nearest_post(chest)
-    local c = storage.chests[chest.unit_number]
-    if best and (not c or c.post ~= best) then attach(chest, best) end
+  if post.name == S.PULLEY then return end -- (pulleys serve no chests)
+  for _, chest in pairs(post.surface.find_entities_filtered({ type = { CHEST, "container" }, area = reach_area(post, S.reach(5) + 2), force = post.force })) do
+    if chest.type == CHEST or chest.name == LOADER then
+      local best = nearest_post(chest)
+      local c = storage.chests[chest.unit_number]
+      if best and (not c or c.post ~= best) then attach(chest, best) end
+    end
   end
 end
 
@@ -173,7 +193,10 @@ end
 
 local function ready(post) return (post.ready or 0) <= game.tick end
 
-local function capacity(post) return tier(post).package * settings.global["chl-package-size"].value end
+local function capacity(post)
+  local n = tier(post).package * settings.global["chl-package-size"].value * (1 + S.QUALITY.throughput * (post.quality or 0))
+  return math.max(1, math.floor(n + 1e-6))
+end
 
 -- take up to n of k from a source chest, launch it toward dest; the count sent (0: nothing)
 local function ship(src_u, src, dest_u, dest, k, n)
@@ -206,7 +229,7 @@ local function source(k, net, dest_u, dest)
     local post = c and storage.posts[c.post]
     if n > 0 and u ~= dest_u and post and post.net == net and c.e.valid
         and not (c.mode == "buffer" and dest.mode == "buffer") then
-      local r = RANK[c.mode] or 9
+      local r = rank(c)
       local p = c.e.position
       local d = (p.x - dp.x) ^ 2 + (p.y - dp.y) ^ 2
       if not br or r < br or (r == br and d < bd) then best, br, bd = u, r, d end
@@ -278,11 +301,51 @@ local function push(u, c, inv)
   end
 end
 
+-- the nearest unloader on net whose name matches the address and that has room for the item
+local function addressee(address, net, from, name, quality)
+  local best, bd
+  for u in pairs(N.unloaders(address)) do
+    local c = storage.chests[u]
+    local post = c and storage.posts[c.post]
+    if post and post.net == net and c.e.valid and c.e.can_insert({ name = name, quality = quality }) then
+      local p = c.e.position
+      local d = (p.x - from.x) ^ 2 + (p.y - from.y) ^ 2
+      if not bd or d < bd then best, bd = u, d end
+    end
+  end
+  return best
+end
+
+-- a loader with an address: what it holds to the unloader it names, a package at a time. Nothing matches: it stays
+local function send_addressed(u, c, address)
+  local post = storage.posts[c.post]
+  if not ready(post) then return end
+  local inv = c.e.get_inventory(defines.inventory.chest)
+  if inv.is_empty() then return end
+  for _, it in pairs(inv.get_contents()) do
+    local to = addressee(address, post.net, c.e.position, it.name, it.quality)
+    if to then
+      ship(u, c, to, storage.chests[to], key(it.name, it.quality), it.count)
+      return
+    end
+  end
+end
+
 local function turn(u)
   local c = storage.chests[u]
   if not c then return end
   if not c.e.valid or not storage.posts[c.post] then
     detach(u)
+    return
+  end
+  if c.loader then
+    local address = N.address(u)
+    if address then
+      if next(c.items) then forget_supply(c, u) end
+      send_addressed(u, c, address)
+    else
+      offer(c, u)
+    end
     return
   end
   local mode = c.mode
@@ -326,7 +389,7 @@ function L.deliver(pkg, post_u)
     if n > 0 then
       for _, c in pairs(storage.chests) do
         if n <= 0 then break end
-        if c.post == post_u and c.e.valid then n = n - c.e.insert({ name = it.name, quality = it.quality, count = n }) end
+        if c.post == post_u and not c.loader and c.e.valid then n = n - c.e.insert({ name = it.name, quality = it.quality, count = n }) end
       end
     end
     if n > 0 then left[#left + 1] = { name = it.name, quality = it.quality, count = n } end

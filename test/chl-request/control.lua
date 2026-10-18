@@ -26,7 +26,7 @@ script.on_nth_tick(10, function(ev)
     check(remote.call(CL, "chest_post", t.req.unit_number) == t.c.unit_number, "the requester is served by post C")
     check(remote.call(CL, "net", t.a.unit_number) == remote.call(CL, "net", t.c.unit_number), "A and C are one network")
   elseif ev.tick == 420 then
-    -- (packages leave every 32 ticks and ride about 360: by now two or three are in)
+    -- (packages leave every 32 ticks and ride about 354: by now two or three are in)
     local n = t.req.get_item_count("iron-plate")
     check(n >= 8 and n <= 24, "it comes a package at a time, not all at once (" .. n .. " at tick 420)")
   elseif ev.tick == 1500 then

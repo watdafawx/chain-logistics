@@ -1,7 +1,8 @@
 """blender -b --factory-startup --python art/build.py -- OUT_DIR [SKIN ...]: the mod's sprites, every skin:
 OUT_DIR/<skin>/<sprite>/NN.png (+ NN_shadow.png, NN_glow.png) and OUT_DIR/<skin>/icons/; art/pack.py turns them into
-graphics/entity/<skin>/ sheets. The look (picked from art/concepts*.py): cyberpunk build 1 posts (a hex pad, a spike,
-the head hovering over it in holo rings), a neon-link chain, a hard-case package. Units: tiles, Z up, north +Y."""
+graphics/entity/<skin>/ sheets. The look (picked from art/concepts*.py): cyberpunk build 1 posts (a hex pad, a spike
+with a neon collar a tier (post1..post3), the head hovering over it in holo rings), a neon-link chain, a hard-case
+package. Units: tiles, Z up, north +Y."""
 import math
 import os
 import sys
@@ -92,8 +93,15 @@ def clear(objs):
         bpy.data.objects.remove(o, do_unlink=True)
 
 
-def post(m, ground):
-    """a hex pad with a spike; the head hovers over it in two holo rings. The ring of chain round the sprocket turns."""
+# neon collars round a post's spike, one a tier (heights): the tier at a glance, like a belt's colour. (Rings under
+# the head read worse: seen from 45 degrees they overlap each other and the head.)
+COLLARS = (1.08, 0.92, 0.76)
+MAX_TIER = 6  # (shared.lua's MAX_TIERS: tiers 4-6 are made for faster modded belts, data-updates.lua)
+
+
+def post(m, ground, tier):
+    """a hex pad with a spike, a neon collar on it a tier; the head hovers over it in two holo rings. The ring of
+    chain round the sprocket turns (the game plays it at the tier's speed)."""
     Z = CHAIN_Z
     T = rig.torus
     still = [
@@ -109,6 +117,9 @@ def post(m, ground):
         rig.cyl("hub", 0.1, 0.08, (0, 0, Z + 0.05), m["trim"], 0.01, verts=16),
         T("rim", 0.31, 0.01, (0, 0, Z + 0.03), m["glow"], segs=32),
     ]
+    # (past three, the collars turn the other neon colour one by one, from the top: tier 4 = 1 of 3, tier 6 = all 3)
+    still += [T(f"collar{k}", 0.068, 0.02, (0, 0, z), m["glow"] if k < tier - 3 else m["trim"], segs=6)
+              for k, z in enumerate(COLLARS[:min(tier, 3)])]
     turning = []
     for k in range(RING_LINKS):
         a = k * math.tau / RING_LINKS
@@ -122,15 +133,52 @@ def post(m, ground):
     def pose(i):  # the lit pattern (4 links, 60 degrees) over 8 frames, the chain running anticlockwise as seen from above
         hub.rotation_euler = (0, 0, math.radians(60) * i / 8)
 
-    frames("post", objs, lit(objs, m), ground, 8, pose, (128, 320), (352, 320))
+    frames(f"post{tier}", objs, lit(objs, m), ground, 8, pose, (128, 320), (352, 320))
     pose(0)
-    icon("post", objs, ground, 1.0, 2.4)
+    icon(f"post{tier}", objs, ground, 1.0, 2.4)
+    clear(objs + [hub])
+
+
+def pulley(m, ground):
+    """a chain pulley: a low hex pad with a short spike, a small wheel hovering over it in a holo ring. Its ring of
+    chain sits at CHAIN_Z and radius R, as a post's does, so the strands meet it; it turns like a post's."""
+    Z = CHAIN_Z
+    T = rig.torus
+    still = [
+        rig.cyl("hex", 0.24, 0.05, (0, 0, 0.025), m["prim"], 0.008, verts=6),
+        T("hexneon", 0.23, 0.01, (0, 0, 0.052), m["trim"], segs=6),
+        rig.cyl("core", 0.1, 0.22, (0, 0, 0.16), m["prim"], 0.01, verts=6),
+        T("coreneon", 0.105, 0.01, (0, 0, 0.24), m["glow"], segs=6),
+        rig.cyl("spike", 0.04, 0.5, (0, 0, 0.52), m["prim"], verts=6),
+        rig.cyl("tip", 0.02, 0.1, (0, 0, 0.82), m["trim"], verts=6),
+        T("holo", 0.2, 0.006, (0, 0, Z - 0.32), m["glow"], segs=32),
+        rig.cyl("axle", 0.06, 0.1, (0, 0, Z - 0.06), m["prim"], 0.01, verts=12),
+        rig.cyl("spr", 0.3, 0.04, (0, 0, Z), m["prim"], 0.008, verts=32),
+        rig.cyl("hub", 0.08, 0.07, (0, 0, Z + 0.04), m["trim"], 0.01, verts=16),
+        T("rim", 0.31, 0.01, (0, 0, Z + 0.025), m["glow"], segs=32),
+    ]
+    turning = []
+    for k in range(RING_LINKS):
+        a = k * math.tau / RING_LINKS
+        turning.append(link(k, (R * math.cos(a), R * math.sin(a), Z), a + math.pi / 2, m))
+    for k in range(3):  # spokes, so it reads as turning
+        a = k * math.tau / 3
+        turning.append(rig.box("spoke", (0.2, 0.03, 0.01), (0.17 * math.cos(a), 0.17 * math.sin(a), Z + 0.022), m["sec"], 0.002, rot=(0, 0, a)))
+    hub = pivot("hub", Z, turning)
+    objs = still + turning
+
+    def pose(i):  # as a post's ring: the lit pattern (60 degrees) over 8 frames
+        hub.rotation_euler = (0, 0, math.radians(60) * i / 8)
+
+    frames("pulley", objs, lit(objs, m), ground, 8, pose, (128, 320), (352, 320))
+    pose(0)
+    icon("pulley", objs, ground, 1.0, 2.4)
     clear(objs + [hub])
 
 
 def span(m, ground):
     """a straight chain running east, centred on the origin (the game draws it rotated, tiled and raised to CHAIN_Z).
-    One tile wide; it crawls one lit pattern (0.5 tiles) east over 8 frames."""
+    One tile wide; it crawls one lit pattern (0.5 tiles) east over 8 frames (data.lua plays it at each tier's speed)."""
     links = [link(i, (-1.5 + i * LINK, 0, 0), 0, m) for i in range(int(3 / LINK) + 1)]
     root = bpy.data.objects.new("root", None)
     bpy.context.scene.collection.objects.link(root)
@@ -175,6 +223,8 @@ for skin in (sys.argv[sys.argv.index("--") + 2:] or SKINS):
     rig.reset()
     g = rig.ground_catcher()
     mm = mats(skin)
-    post(mm, g)
+    for tier in range(1, MAX_TIER + 1):
+        post(mm, g, tier)
+    pulley(mm, g)
     span(mm, g)
     package(mm, g)
