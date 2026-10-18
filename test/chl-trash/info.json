@@ -1,0 +1,2 @@
+{"name": "chl-trash", "version": "0.0.1", "title": "chain logistics chl-trash test", "author": "mtopfox", "factorio_version": "2.0",
+ "dependencies": ["base", "chain-logistics"]}

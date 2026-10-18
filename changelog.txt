@@ -1,0 +1,19 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 2026-10-18
+  Features:
+    - Logistic chests over chains: every post serves the logistic chests next to it (any logistic-container, modded
+      ones too). Requester and buffer chests get what they ask for from the chain network in vanilla's order
+      (active provider, storage, buffer, passive provider); active providers and requesters' trash empty into
+      storage. Nothing is over-delivered: packages on their way count towards the request.
+    - Chests in a logistic network with robots are left to the robots (map setting to let chains help).
+    - A post sends about a yellow belt's worth (8-item packages every 32 ticks); map setting "Package size".
+    - Alt mode shows which post serves which chest.
+---------------------------------------------------------------------------------------------------
+Version: 0.0.1
+Date: 2026-10-18
+  Features:
+    - Spike: chain posts link to the nearest post in reach; packages ride the spans as engine-moved projectiles,
+      one script event a hop. Rendered post, chain and package art (Blender scripts in art/).
+    - Cyberpunk look: hovering post heads over a hex pad, a neon-link chain, a hard-case package; four colour
+      skins (startup setting "Look"); the neon glows at night.
