@@ -68,6 +68,11 @@ Known: vanilla shows its "not in a logistic network" icon on logistic chests out
 **Range ring** (0.3.1): placing a post or pulley, or hovering one, shows its span range as a ring in the skin's neon
 (`radius_visualisation_specification`, the way pole supply areas and show-max-underground-distance work). A
 prototype can't vary it by quality, so it shows a normal post's 16 tiles; better quality reaches farther.
+**While holding** a post or pulley (the item, a ghost, or a blueprint / book page with one), every node within 96
+tiles shows its own ring at its own quality's range, seen only by you (`rings.lua`: drawn on cursor change, again
+after you move 24 tiles or a node is built or removed). Put the new post inside the ring of the one it should link to.
+(The cursor event comes a tick after a script sets the cursor; headless tests have no player, so this was checked in
+a client game.)
 
 ## How it works
 - A **chain post** links to the nearest post within 16 tiles. A span is two strands, one each way, drawn with

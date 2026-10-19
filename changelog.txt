@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.2
+Date: 2026-10-19
+  Features:
+    - Holding a post or pulley (item, ghost or a blueprint with one) shows the range ring of every post and pulley
+      around you at its own quality's range, only to you, so you can see which one a new post will link to.
+---------------------------------------------------------------------------------------------------
 Version: 0.3.1
 Date: 2026-10-19
   Features:

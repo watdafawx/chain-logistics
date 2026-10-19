@@ -4,6 +4,7 @@ local S = require("shared")
 local L = require("logistics")
 local N = require("names")
 local R = require("ride")
+local G = require("rings")
 
 local POSTS = S.POSTS
 L.POST = POSTS
@@ -495,13 +496,23 @@ local filters = { { filter = "type", type = "logistic-container" }, { filter = "
 for _, name in ipairs(NODES) do filters[#filters + 1] = { filter = "name", name = name } end
 for _, ev in pairs(built) do
   script.on_event(ev, function(e)
-    if is_node(e.entity.name) then add_post(e.entity) else L.chest_built(e.entity) end
+    if is_node(e.entity.name) then
+      add_post(e.entity)
+      G.nodes_changed()
+    else
+      L.chest_built(e.entity)
+    end
     N.built(e.entity, e.tags)
   end, filters)
 end
 for _, ev in pairs(gone) do
   script.on_event(ev, function(e)
-    if is_node(e.entity.name) then remove_post(e.entity.unit_number) else L.chest_gone(e.entity) end
+    if is_node(e.entity.name) then
+      remove_post(e.entity.unit_number)
+      G.nodes_changed()
+    else
+      L.chest_gone(e.entity)
+    end
   end, filters)
 end
 script.on_event(defines.events.on_tick, function(ev)
@@ -519,7 +530,13 @@ script.on_event(defines.events.on_gui_click, function(ev)
 end)
 script.on_event("chl-ride", R.on_input)
 script.on_event(defines.events.on_pre_player_died, R.on_pre_player_died)
-script.on_event(defines.events.on_pre_player_left_game, R.on_pre_player_left_game)
+script.on_event(defines.events.on_pre_player_left_game, function(ev)
+  R.on_pre_player_left_game(ev)
+  G.on_left(ev)
+end)
+script.on_event(defines.events.on_player_cursor_stack_changed, G.on_cursor_changed)
+script.on_event(defines.events.on_player_changed_position, G.on_moved)
+script.on_event(defines.events.on_player_changed_surface, G.on_cursor_changed) -- (redraws there, if still holding)
 script.on_event(defines.events.on_player_driving_changed_state, R.on_driving_changed)
 script.on_event(defines.events.on_gui_location_changed, R.on_location_changed)
 script.on_event(defines.events.on_gui_text_changed, N.on_text_changed)
@@ -559,5 +576,7 @@ remote.add_interface("chain-logistics", {
   set_setting = function(name, value) settings.global[name] = { value = value } end,
   -- (for tests) the tier table, with the tiers made for faster modded belts, and each tier's post
   tiers = function() return { tiers = S.TIERS, posts = S.POSTS } end,
+  rings = G.count, -- (for tests) how many range rings a player sees while holding a post
+  holding = function(index) return G.holding(game.get_player(index)) end,
 })
 L.send = send
