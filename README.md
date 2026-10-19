@@ -65,6 +65,10 @@ Like Create's chain conveyors: hang on and ride.
 
 Known: vanilla shows its "not in a logistic network" icon on logistic chests outside roboport reach, chains or not.
 
+**Range ring** (0.3.1): placing a post or pulley, or hovering one, shows its span range as a ring in the skin's neon
+(`radius_visualisation_specification`, the way pole supply areas and show-max-underground-distance work). A
+prototype can't vary it by quality, so it shows a normal post's 16 tiles; better quality reaches farther.
+
 ## How it works
 - A **chain post** links to the nearest post within 16 tiles. A span is two strands, one each way, drawn with
   `rendering` (no per-tick cost).

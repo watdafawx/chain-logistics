@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.1
+Date: 2026-10-19
+  Features:
+    - A post's and a pulley's span range shows as a ring in the skin's neon while placing one and when hovering one
+      (a normal post's 16 tiles; higher quality reaches farther than the ring).
+  Bugfixes:
+    - The changelog said riding uses F: it's the vehicle key, Enter by default.
+---------------------------------------------------------------------------------------------------
 Version: 0.3.0
 Date: 2026-10-18
   Features:
@@ -9,8 +17,8 @@ Date: 2026-10-18
     - Chain pulleys: a cheap node that bends a line; the chain wraps round it and packages pass without stopping.
     - Quality: a better post sends bigger packages (+30% a level), reaches farther (spans +2 tiles, chests +0.5 a
       level) and runs a faster chain (+15% a level; a span takes its lower-quality end's).
-    - Ride the chains: the vehicle key (F) by a post hooks you on; steer at each post with the walking keys, or pick
-      a named post or unloader to ride to; F again (or a vehicle, or dying) drops you off.
+    - Ride the chains: the vehicle key (Enter by default) by a post hooks you on; steer at each post with the walking
+      keys, or pick a named post or unloader to ride to; the vehicle key again (or a vehicle, or dying) drops you off.
     - Chain posts for faster modded belts: every belt faster than express (Space Age's turbo, Krastorio 2's, ...)
       gets a tier moving as much as it does, made from the tier before plus that belt and unlocked with it (up to 6
       tiers; tiers 4-6 show their collars in the other neon colour).

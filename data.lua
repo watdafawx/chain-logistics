@@ -45,6 +45,7 @@ data:extend({
     collision_box = { { -0.25, -0.25 }, { 0.25, 0.25 } },
     selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
     drawing_box_vertical_extension = 1.5,
+    radius_visualisation_specification = P.range_ring(),
     -- (its ring turns at a tier-1 chain's speed: it has no tier of its own)
     animations = {
       layers = {
@@ -151,6 +152,7 @@ data:extend({
 -- riding the chains: the vehicle key by a post hooks the character on; it hangs from a trolley (the package's case
 -- for now)
 data:extend({
-  { type = "custom-input", name = "chl-ride", key_sequence = "F", linked_game_control = "toggle-driving" },
+  { type = "custom-input", name = "chl-ride", key_sequence = "RETURN", linked_game_control = "toggle-driving" },
+  -- (linked: it takes whatever key "Enter or exit vehicle" is bound to, Enter by default)
   { type = "animation", name = "chl-trolley", layers = { anim("package", 0.15), anim("package_glow", 0.15, GLOW) } },
 })

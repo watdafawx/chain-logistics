@@ -30,6 +30,19 @@ end
 P.GLOW = { draw_as_light = true }
 P.SHADOW = { draw_as_shadow = true }
 
+-- a post's (or pulley's) span range, shown while placing one and when hovering one, like a pole's supply area: a
+-- ring (art/range_ring.py) in the skin's neon, stretched over 2 x RANGE tiles. (A prototype can't vary it by quality:
+-- it shows a normal post's 16 tiles; legendary reaches 26)
+local RING_TINT = { magenta = { 1, 0.1, 0.6 }, toxic = { 0.3, 1, 0.15 }, orange = { 1, 0.35, 0 }, red = { 1, 0.1, 0.1 } }
+function P.range_ring()
+  return {
+    sprite = { filename = G .. "range-ring.png", size = 512, priority = "extra-high-no-scale", tint = RING_TINT[skin] },
+    distance = S.RANGE,
+    draw_in_cursor = true,
+    draw_on_selection = true,
+  }
+end
+
 -- the frames' chain moves LINK_PAIR (a span) / RING (a post) a cycle of 8: at a tier's speed, so many frames a tick
 function P.span_speed(t) return S.TIERS[t].speed * 8 / S.LINK_PAIR end
 function P.ring_speed(t) return S.TIERS[t].speed * 8 / S.RING end
@@ -73,6 +86,7 @@ function P.make(t, r, tech, localised_name)
       selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
       drawing_box_vertical_extension = 1.5,
       fast_replaceable_group = "chl-chain-post",
+      radius_visualisation_specification = P.range_ring(),
       next_upgrade = S.POSTS[t + 1],
       animations = {
         layers = {
