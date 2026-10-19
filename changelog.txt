@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.3
+Date: 2026-10-19
+  Changes:
+    - Instead of overlapping rings round every node: holding a post or pulley marks the previous post's farthest
+      reachable tile in 8 directions with dim squares (the post you placed last, else the nearest); hovering one
+      lights it and shows the distance.
+---------------------------------------------------------------------------------------------------
 Version: 0.3.2
 Date: 2026-10-19
   Features:

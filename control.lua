@@ -498,7 +498,7 @@ for _, ev in pairs(built) do
   script.on_event(ev, function(e)
     if is_node(e.entity.name) then
       add_post(e.entity)
-      G.nodes_changed()
+      G.nodes_changed(e.entity, e.player_index)
     else
       L.chest_built(e.entity)
     end
@@ -537,6 +537,7 @@ end)
 script.on_event(defines.events.on_player_cursor_stack_changed, G.on_cursor_changed)
 script.on_event(defines.events.on_player_changed_position, G.on_moved)
 script.on_event(defines.events.on_player_changed_surface, G.on_cursor_changed) -- (redraws there, if still holding)
+script.on_event(defines.events.on_selected_entity_changed, G.on_selected)
 script.on_event(defines.events.on_player_driving_changed_state, R.on_driving_changed)
 script.on_event(defines.events.on_gui_location_changed, R.on_location_changed)
 script.on_event(defines.events.on_gui_text_changed, N.on_text_changed)
@@ -576,7 +577,7 @@ remote.add_interface("chain-logistics", {
   set_setting = function(name, value) settings.global[name] = { value = value } end,
   -- (for tests) the tier table, with the tiers made for faster modded belts, and each tier's post
   tiers = function() return { tiers = S.TIERS, posts = S.POSTS } end,
-  rings = G.count, -- (for tests) how many range rings a player sees while holding a post
+  rings = G.count, -- (for tests) a player's reach markers while holding a post: {marks, anchor, lit}
   holding = function(index) return G.holding(game.get_player(index)) end,
 })
 L.send = send

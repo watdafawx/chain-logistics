@@ -144,6 +144,29 @@ data:extend({ loader, unloader })
 data:extend(item_recipe("chl-loader", loader.icons, "a-loader"))
 data:extend(item_recipe("chl-unloader", unloader.icons, "b-unloader"))
 
+-- placing posts: the farthest tile a post reaches in each of 8 directions is marked (rings.lua), dim until you hover
+-- the spot. The hover works through an invisible marker entity there: it blocks nothing, is never blueprinted or
+-- mined, and real entities win the selection over it
+data:extend({
+  { type = "sprite", name = "chl-reach-marker", filename = "__chain-logistics__/graphics/reach-marker.png", size = 64, scale = 0.5 },
+  {
+    type = "simple-entity-with-owner",
+    name = "chl-reach-spot",
+    localised_name = { "chl.reach-spot" },
+    icon = "__chain-logistics__/graphics/reach-marker.png",
+    icon_size = 64,
+    hidden = true,
+    flags = { "placeable-off-grid", "not-on-map", "not-blueprintable", "not-deconstructable", "not-upgradable",
+      "no-copy-paste", "not-in-kill-statistics", "not-flammable" },
+    collision_mask = { layers = {} },
+    collision_box = { { -0.4, -0.4 }, { 0.4, 0.4 } },
+    selection_box = { { -0.5, -0.5 }, { 0.5, 0.5 } },
+    selection_priority = 1,
+    max_health = 1,
+    picture = { filename = "__core__/graphics/empty.png", size = 1 },
+  },
+})
+
 -- clicking a post opens its name window (posts have no window of their own)
 data:extend({
   { type = "custom-input", name = "chl-open", key_sequence = "", linked_game_control = "open-gui" },
