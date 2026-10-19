@@ -46,11 +46,13 @@ Not only logistic chests: machines and belts join the chains through vanilla ins
 Like Create's chain conveyors: hang on and ride.
 - **Hook on**: the vehicle key (Enter by default, whatever *Enter or exit vehicle* is bound to) within 2 tiles of a
   post or pulley. The character hangs under a trolley on the chain and can't be hurt up there.
-- **Steer**: at each post the walking keys pick the next span (the one closest to the direction held); with none
-  held the rider waits at the post. Holding the way back turns round mid-span. Bent pulleys are passed without
-  stopping. A rider rides the span's right-hand strand at its speed (its tier and quality), like a package.
+- **Rides on by itself** (0.3.4), like a train: it sets off at once along the span closest to the way the character
+  faces, goes straight on through posts (the span closest to the way it came in), and at the end of a line turns back,
+  until you get off. A walking key held at a post picks the span closest to it; holding the way back turns round
+  mid-span. Bent pulleys are passed without stopping. A rider rides the span's right-hand strand at its speed (its
+  tier and quality), like a package.
 - **Ride to a name**: while riding, a small window lists the network's named posts and unloaders; click one and it
-  rides the shortest way there. Any walking key takes over again.
+  rides the shortest way there and parks; a walking key sets it off again (and takes over from a route).
 - **Get off**: the vehicle key again (or *Get off* in the window). Dying, getting into a vehicle, leaving the game
   or the chain going under it (a post mined) drop it too, on the nearest free spot under the chain.
 - Cost: one teleport a tick a rider. Remote (tests): `ride(character, unit[, player_index])`, `ride_to(key, unit)`,
@@ -122,8 +124,9 @@ vanilla's steel chest. `pack.py` crops each skin's frames into `graphics/entity/
 - `chl-belt-tiers`: test belts at 60 and 75/s (two at 60) make tiers 4 and 5 with the right throughput, recipes,
   unlocks and upgrade chain; a tier-4 pair moves about 60 items/s.
 - `chl-names`: names and an address survive a blueprint round trip (ghosts revived with `raise_revive`) and an upgrade.
-- `chl-ride`: a rider sent to a named post rides the shortest way at the span's speed and waits there; steering picks
-  the span closest to the direction held and turns round mid-span; getting off (by a post and a chest) lands on a
-  free spot; a post mined under a rider drops it.
+- `chl-ride`: a rider sent to a named post rides the shortest way at the span's speed and parks there; steering picks
+  the span closest to the direction held and turns round mid-span; with no key it turns back at the end of a line;
+  hooked on facing east it sets off at once, straight through a junction; getting off (by a post and a chest) lands
+  on a free spot; a post mined under a rider drops it.
 - `chl-tiers`: a tier-2 pair moves twice a tier-1 pair's items; tier-3 and mixed spans ride at the right speed (and
   draw the right crawl); a fast-replace upgrade keeps the span and redraws it at the new tier.

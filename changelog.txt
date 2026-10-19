@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.3.4
+Date: 2026-10-19
+  Changes:
+    - Riding keeps going by itself: it sets off as soon as you hook on (the way you face), goes straight on through
+      posts and turns back at the end of a line, until you get off. Walking keys pick the way at a junction or turn
+      you round; riding to a name parks you there until a walking key sets you off again.
+---------------------------------------------------------------------------------------------------
 Version: 0.3.3
 Date: 2026-10-19
   Changes:

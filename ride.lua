@@ -173,6 +173,8 @@ function R.hook(c, u, player_index)
   -- (it waits on the post's south side, where an east-west line's strands pass)
   local r = { c = c, player = player_index, node = u, pts = {}, x = p.x, y = p.y + S.R * S.SQUASH,
     destructible = c.destructible }
+  -- (it sets off at once, along the span closest to the way the character faces)
+  r.hx, r.hy = dir_vec(c.direction)
   storage.riders[key] = r
   c.destructible = false -- (hanging up there: nothing on the ground reaches it)
   -- (it can't walk off: the walking keys only say where to go. Its walking state stays as the keys have it, so a key
@@ -230,13 +232,16 @@ local function say(r, text)
   if player then player.create_local_flying_text({ text = text, position = { r.x, r.y - 2 } }) end
 end
 
--- at node r.node: where next (nil: wait). dir: the direction held, or nil
+-- at node r.node: where next (nil: wait). dir: the direction held, or nil. With no key held a rider keeps going like a
+-- train: on along the straightest span, and at the end of a line back the way it came, until it gets off, a key
+-- steers it, or it parks at a destination it was sent to (a key starts it again)
 local function next_node(r, dir)
   local n = r.node
   local p = storage.posts[n]
   if r.dest then
     if n == r.dest then
       r.dest = nil
+      r.parked = true
       say(r, { "chl.ride-arrived" })
       return nil
     end
@@ -249,15 +254,31 @@ local function next_node(r, dir)
   -- a bent pulley only bends the line: on round it
   local through = r.from and C.other(n, r.from)
   if through then return through end
-  if not dir then return nil end
-  local dx, dy = dir_vec(dir)
+  if dir then
+    local dx, dy = dir_vec(dir)
+    local best, bd
+    for v in pairs(p.links) do
+      local ux, uy = unit_to(n, v)
+      local d = ux * dx + uy * dy
+      if d > AHEAD and (not bd or d > bd) then best, bd = v, d end
+    end
+    if best then return best end -- (no span that way: on as before)
+  end
+  if r.parked then return nil end
+  -- momentum: the heading it came in on (or, just hooked on, the way the character faced)
+  local hx, hy = r.hx or 0, r.hy or 0
+  if r.from and storage.posts[r.from] then hx, hy = unit_to(r.from, n) end
   local best, bd
   for v in pairs(p.links) do
-    local ux, uy = unit_to(n, v)
-    local d = ux * dx + uy * dy
-    if d > AHEAD and (not bd or d > bd) then best, bd = v, d end
+    if v ~= r.from then
+      local ux, uy = unit_to(n, v)
+      local d = ux * hx + uy * hy
+      if not bd or d > bd then best, bd = v, d end
+    end
   end
-  return best
+  if best then return best end
+  if r.from and p.links[r.from] then return r.from end -- (the end of the line: back the way it came)
+  return nil
 end
 
 -- the direction the player holds, or the test's
@@ -273,6 +294,7 @@ local function ride(key, r)
   local c = r.c
   if not c.valid then return R.drop(key) end
   local dir = held(r)
+  if dir then r.parked = nil end
   if dir and r.dest then
     r.dest = nil -- (a walking key takes over from the route)
     refresh(r)
@@ -380,7 +402,7 @@ end
 function R.state(key)
   local r = storage.riders[key]
   if not r then return nil end
-  return { node = r.node, to = r.to, x = r.x, y = r.y, dest = r.dest, riding = true }
+  return { node = r.node, from = r.from, to = r.to, x = r.x, y = r.y, dest = r.dest, parked = r.parked, riding = true }
 end
 
 function R.steer(key, dir)

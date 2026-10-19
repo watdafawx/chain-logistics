@@ -1,8 +1,10 @@
 -- riding: posts A - B - C in a line (10 tiles apart) and D 10 tiles south of B. A character hooked onto A and sent
--- to C (named "Dest") rides the shortest way (not by D) at the span's speed and waits there, hung from the chain
+-- to C (named "Dest") rides the shortest way (not by D) at the span's speed and parks there, hung from the chain
 -- and not destructible. Steering: south-southwest from C goes back to B, then south to D (the closest span to the
--- direction held). Holding north then south mid-span turns it round. Getting off by D's post (and a chest) lands
--- it on a free spot; a post mined under a rider drops it
+-- direction held). With no key held it keeps going: at D, the end of the line, it turns back. Holding north then
+-- south mid-span turns it round. Sent to D, it parks; getting off by D's post (and a chest) lands it on a free spot.
+-- Hooked on with no destination, facing east, it sets off at once and runs straight through B to C, then back. A post
+-- mined under a rider drops it
 local out, fails = {}, 0
 local function check(ok, what)
   out[#out + 1] = (ok and "ok   " or "FAIL ") .. what
@@ -73,7 +75,7 @@ script.on_event(defines.events.on_tick, function(ev)
       finish()
     end
   elseif t.phase == "wait" and ev.tick - t.at == 60 then
-    check(r.node == t.C.unit_number and not r.to, "with no key held it waits at C")
+    check(r.node == t.C.unit_number and not r.to, "sent to C, it parks there")
     remote.call(CL, "ride_steer", t.key, D.southsouthwest)
     t.phase, t.at, t.seen = "to-D", ev.tick, {}
   elseif t.phase == "to-D" then
@@ -81,24 +83,30 @@ script.on_event(defines.events.on_tick, function(ev)
     if r.to == t.A.unit_number then
       check(false, "south-southwest at B takes the span to D, not A")
       finish()
-    elseif r.node == t.D.unit_number and r.to == nil then
-      remote.call(CL, "ride_steer", t.key, nil)
-      check(t.seen[t.B.unit_number], "steered back to B, then south to D")
-      remote.call(CL, "ride_steer", t.key, D.north)
-      t.phase, t.at = "turn", ev.tick
+    elseif r.node == t.D.unit_number or r.to == t.D.unit_number and r.from == t.B.unit_number then
+      if r.node == t.D.unit_number then
+        remote.call(CL, "ride_steer", t.key, nil) -- (let go at D)
+        check(t.seen[t.B.unit_number], "steered back to B, then south to D")
+        t.phase, t.at = "bounce", ev.tick
+      end
     elseif ev.tick - t.at > 900 then
       check(false, "steers to D")
       finish()
     end
+  elseif t.phase == "bounce" and ev.tick - t.at == 30 then
+    check(r.to == t.B.unit_number, "no key held at D, the end of the line: it turns back towards B")
+    remote.call(CL, "ride_steer", t.key, D.north)
+    t.phase, t.at = "turn", ev.tick
   elseif t.phase == "turn" then
-    if ev.tick - t.at == 60 then
+    if ev.tick - t.at == 30 then
       check(r.to == t.B.unit_number, "north from D heads for B")
       t.mid = r.y
       remote.call(CL, "ride_steer", t.key, D.south)
-    elseif ev.tick - t.at == 90 then
+    elseif ev.tick - t.at == 60 then
       check(r.to == t.D.unit_number and r.y > t.mid, "south mid-span turns it round")
-    elseif t.mid and r.node == t.D.unit_number and not r.to then
       remote.call(CL, "ride_steer", t.key, nil)
+      check(remote.call(CL, "ride_to", t.key, t.D.unit_number), "sent to South (D)")
+    elseif ev.tick - t.at > 60 and r.node == t.D.unit_number and not r.to then
       local cx, cy = r.x, r.y
       remote.call(CL, "ride_off", t.key)
       check(st() == nil, "off the chain")
@@ -106,18 +114,32 @@ script.on_event(defines.events.on_tick, function(ev)
       check(crowding(t.c) == 0, "it lands on a free spot (" .. string.format("%.2f, %.2f", p.x, p.y) .. ")")
       check((p.x - cx) ^ 2 + (p.y - cy) ^ 2 < 4, "under the chain")
       check(t.c.destructible, "destructible again")
-      -- a post mined under a rider drops it
+      -- hooked on with no destination, facing east: off at once, straight on through B (not D) to C, then back
+      t.c.teleport({ 0.5, 4.5 })
+      t.c.direction = D.east
       t.key = remote.call(CL, "ride", t.c, t.A.unit_number)
-      remote.call(CL, "ride_steer", t.key, D.east)
-      t.phase, t.at = "mine", ev.tick
+      t.phase, t.at, t.seen = "run", ev.tick, {}
     elseif ev.tick - t.at > 600 then
       check(false, "back at D")
       finish()
     end
-  elseif t.phase == "mine" and ev.tick - t.at == 60 then
+  elseif t.phase == "run" then
+    t.seen[r.node] = true
+    if ev.tick - t.at == 2 then
+      check(r.to == t.B.unit_number, "hooked on facing east, it sets off for B at once")
+    elseif r.node == t.C.unit_number then
+      -- (it turns back the same tick it gets there)
+      check(t.seen[t.B.unit_number] and not t.seen[t.D.unit_number], "straight on through B, not to D")
+      check(r.to == t.B.unit_number, "at C, the end of the line, back towards B")
+      t.phase, t.at = "mine", ev.tick
+    elseif ev.tick - t.at > 900 then
+      check(false, "runs on to C and back (at node " .. tostring(r.node) .. ")")
+      finish()
+    end
+  elseif t.phase == "mine" and ev.tick - t.at == 1 then
     check(st() and st().to == t.B.unit_number, "riding to B")
     t.B.destroy({ raise_destroy = true })
-  elseif t.phase == "mine" and ev.tick - t.at == 61 then
+  elseif t.phase == "mine" and ev.tick - t.at == 2 then
     check(st() == nil, "B mined: the rider is dropped")
     check(t.c.destructible and crowding(t.c) == 0, "on a free spot, destructible")
     finish()
