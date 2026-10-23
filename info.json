@@ -1,9 +1,9 @@
 {
   "name": "chain-logistics",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "title": "Chain Logistics",
   "author": "mtopfox",
-  "factorio_version": "2.0",
+  "factorio_version": "2.1",
   "description": "Packages ride overhead chains between posts, from logistic chests to logistic chests: belts on the ground, items in the air, an early-game stand-in for logistic robots.",
   "dependencies": [
     "base >= 2.0"

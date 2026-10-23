@@ -68,7 +68,7 @@ function P.make(t, r, tech, localised_name)
       type = "recipe",
       name = name,
       enabled = r.enabled,
-      category = r.category,
+      categories = r.category and { r.category } or nil,
       energy_required = 1,
       ingredients = r.ingredients,
       results = { { type = "item", name = name, amount = 1 } },

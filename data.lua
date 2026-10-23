@@ -91,6 +91,11 @@ end
 
 -- every layer of a sprite (or animation) but the shadow, tinted
 local function tint_layers(sprite, tint)
+  if not sprite then return end
+  if sprite.north then -- (a Sprite4Way)
+    for _, d in pairs({ "north", "east", "south", "west" }) do tint_layers(sprite[d], tint) end
+    return
+  end
   for _, l in pairs(sprite.layers or { sprite }) do
     if not l.draw_as_shadow then l.tint = tint end
   end
@@ -112,7 +117,7 @@ unloader.max_logistic_slots = 8
 unloader.trash_inventory_size = 0
 unloader.minable = { mining_time = 0.2, result = "chl-unloader" }
 unloader.next_upgrade = nil
-tint_layers(unloader.animation, UNLOADER_TINT)
+tint_layers(unloader.robot_door and unloader.robot_door.animation or unloader.animation, UNLOADER_TINT) -- (2.1: robot_door)
 
 -- a name pastes (shift-click) from post to post (data-updates.lua, once every tier is made), loader to loader,
 -- unloader to unloader

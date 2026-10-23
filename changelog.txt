@@ -1,4 +1,9 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.4.0
+Date: 2026-10-24
+  Changes:
+    - Factorio 2.1: recipe categories, the requester chest's new graphics layout, ring marks kept unminable.
+---------------------------------------------------------------------------------------------------
 Version: 0.3.4
 Date: 2026-10-19
   Changes:

@@ -109,7 +109,7 @@ local function draw(player)
     local spot = e.surface.create_entity({ name = SPOT, position = pos, force = player.force, create_build_effect_smoke = false })
     if spot then
       spot.destructible = false
-      spot.minable = false
+      spot.minable_flag = false
       storage.spot_of[spot.unit_number] = { player.index, i }
       marks[#marks + 1] = {
         spot = spot,
